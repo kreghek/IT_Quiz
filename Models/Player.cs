@@ -2,11 +2,11 @@ namespace IT_Quiz.Models;
 
 public sealed class Player
 {
-    private readonly Lobby _lobby;
+    public Lobby Lobby { get; }
 
     public Player(Lobby lobby)
     {
-        _lobby = lobby;
+        Lobby = lobby;
     }
 
     public int HP { get; set; } = 10;

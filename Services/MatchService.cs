@@ -102,8 +102,44 @@ public sealed class MatchService
     {
         var lobby = _lobbies.Single(x => x.User == username);
         var match = _matches.Single(x => x.MatchId == lobby.MatchId);
-        var question = await _questionService.GetQuestionAsync(match.CurrentQuestionId);
-        
-        
+
+        await match.RegisterAnswer(username, answerId);
+
+        var currentStage = match.CurrentStage;
+
+        if (currentStage.State != "Complete")
+        {
+            await CalcDamage(currentStage);
+
+            var deadPlayer = match.CurrentStage.Players.SingleOrDefault(x => x.HP <= 0);
+
+            if (deadPlayer is null)
+            {
+                var nextQuestion = await _questionService.RollQuestionAsync();
+                match.CompleteCurrentStage(nextQuestion.Id);
+            }
+            else
+            {
+                match.CompleteCurrentStage(null);
+            }
+        }
+    }
+
+    private async Task CalcDamage(Stage currentStage)
+    {
+        var question = await _questionService.GetQuestionAsync(currentStage.QuestionId);
+
+        var answerCorrectness = currentStage.Answers.Select(x => new
+            { Player = x.Item1, IsCorrent = question.Answers.Single(a => a.Id == x.answerid).IsCorrect });
+
+        if (answerCorrectness.All(x => x.IsCorrent) || !answerCorrectness.All(x => x.IsCorrent))
+        {
+            // Do nothing
+        }
+        else
+        {
+            var damagedPlayer = answerCorrectness.Single(x => !x.IsCorrent);
+            damagedPlayer.Player.HP--;
+        }
     }
 }

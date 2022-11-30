@@ -49,9 +49,9 @@ public class MatchController : ControllerBase
     }
 
     [HttpPost("answer")]
-    public IActionResult SendAnswer(string username, string matchId, string answerId)
+    public async Task<IActionResult> SendAnswer(string username, string matchId, string answerId)
     {
-        _matchService.ReceiveAnswerAsync(username, matchId, answerId)
+        await _matchService.ReceiveAnswerAsync(username, matchId, answerId);
         return Ok();
     }
 }
