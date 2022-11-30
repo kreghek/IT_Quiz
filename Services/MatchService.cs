@@ -107,9 +107,9 @@ public sealed class MatchService
 
         var currentStage = match.CurrentStage;
 
-        if (currentStage.State != "Complete")
+        if (currentStage.State == "Complete")
         {
-            await CalcDamage(currentStage);
+            await CalcDamage(match, currentStage);
 
             var deadPlayer = match.CurrentStage.Players.SingleOrDefault(x => x.HP <= 0);
 
@@ -125,21 +125,25 @@ public sealed class MatchService
         }
     }
 
-    private async Task CalcDamage(Stage currentStage)
+    private async Task CalcDamage(Match match, Stage currentStage)
     {
         var question = await _questionService.GetQuestionAsync(currentStage.QuestionId);
 
-        var answerCorrectness = currentStage.Answers.Select(x => new
-            { Player = x.Item1, IsCorrent = question.Answers.Single(a => a.Id == x.answerid).IsCorrect });
+        var answerCorrectness = match.Players.Select(x => new 
+        { 
+            Player = x,
+            IsCorrent = question.Answers.Single(ans => ans.Id == currentStage.Answers.Single(a => a.Item1 == x).answerid).IsCorrect }
+        );
 
-        if (answerCorrectness.All(x => x.IsCorrent) || !answerCorrectness.All(x => x.IsCorrent))
+        if (answerCorrectness.All(x => x.IsCorrent) || answerCorrectness.All(x => !x.IsCorrent))
         {
             // Do nothing
         }
         else
         {
+            var attackerPlayer = answerCorrectness.Single(x => x.IsCorrent);
             var damagedPlayer = answerCorrectness.Single(x => !x.IsCorrent);
-            damagedPlayer.Player.HP--;
+            damagedPlayer.Player.HP-= attackerPlayer.Player.Dmg;
         }
     }
 }

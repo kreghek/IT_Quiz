@@ -1,12 +1,18 @@
+using System.Text.Json.Serialization;
+
 namespace IT_Quiz.Models;
 
 public sealed class Stage
 {
     public string Id { get; }
     public string QuestionId { get; }
+
+    [JsonIgnore]
     public IReadOnlyCollection<Player> Players { get; }
+
     private IList<(Player, string answerid)> _answers;
 
+    [JsonIgnore]
     public IReadOnlyCollection<(Player, string answerid)> Answers => _answers.ToArray();
 
     public Stage(string Id, string QuestionId, IReadOnlyCollection<Player> players)
@@ -14,6 +20,8 @@ public sealed class Stage
         this.Id = Id;
         this.QuestionId = QuestionId;
         Players = players;
+
+        _answers = new List<(Player, string answerid)>();
     }
 
     public string State

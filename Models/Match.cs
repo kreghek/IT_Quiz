@@ -6,7 +6,7 @@ public sealed class Match
 {
     private IReadOnlyList<Lobby> _lobbies;
 
-    private Stage _currentStage;
+    public IReadOnlyCollection<Player> Players => _lobbies.Select(x => new Player(x)).ToArray();
 
     public Match(string matchId, IReadOnlyList<Lobby> lobbies, string startQuestionId)
     {
@@ -14,24 +14,30 @@ public sealed class Match
 
         _lobbies = lobbies;
 
-        _currentStage = new Stage(Guid.NewGuid().ToString(), startQuestionId,
-            lobbies.Select(x => new Player(x)).ToArray());
+        CurrentStage = new Stage(Guid.NewGuid().ToString(), startQuestionId, Players);
+
+        _stages.Add(CurrentStage);
 
         State = "InProgress";
     }
 
     public string MatchId { get; }
 
-    public string CurrentQuestionId => _currentStage.QuestionId;
+    [JsonIgnore]
+    public string CurrentQuestionId => CurrentStage.QuestionId;
 
     [JsonIgnore]
     public Stage CurrentStage { get; private set; }
 
     public string State { get; set; }
 
+    private readonly IList<Stage> _stages = new List<Stage>();
+
+    public IReadOnlyList<Stage> Stages => _stages.ToArray();
+
     public Task RegisterAnswer(string username, string answerId)
     {
-        _currentStage.RegisterAnswer(_currentStage.Players.Single(x=>x.Lobby.User == username), answerId);
+        CurrentStage.RegisterAnswer(CurrentStage.Players.Single(x=>x.Lobby.User == username), answerId);
 
         return Task.CompletedTask;
     }
@@ -44,7 +50,8 @@ public sealed class Match
             return;
         }
 
-        CurrentStage = new Stage(Guid.NewGuid().ToString(), questionId,
-            _lobbies.Select(x => new Player(x)).ToArray());
+        CurrentStage = new Stage(Guid.NewGuid().ToString(), questionId, Players);
+
+        _stages.Add(CurrentStage);
     }
 }
