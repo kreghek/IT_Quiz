@@ -111,7 +111,7 @@ public sealed class MatchService
         {
             await CalcDamage(match, currentStage);
 
-            var deadPlayer = match.CurrentStage.Players.SingleOrDefault(x => x.HP <= 0);
+            var deadPlayer = match.CurrentStage.Players.SingleOrDefault(x => x.Hp <= 0);
 
             if (deadPlayer is null)
             {
@@ -129,11 +129,16 @@ public sealed class MatchService
     {
         var question = await _questionService.GetQuestionAsync(currentStage.QuestionId);
 
-        var answerCorrectness = match.Players.Select(x => new 
-        { 
-            Player = x,
-            IsCorrent = question.Answers.Single(ans => ans.Id == currentStage.Answers.Single(a => a.Item1 == x).answerid).IsCorrect }
-        );
+        var answerCorrectness = match.Players.Select(x => new
+            {
+                Player = x,
+                PlayerAnswerId = GetAnswerId(currentStage, x)
+            })
+            .Select(x => new
+            {
+                x.Player,
+                IsCorrent = question.Answers.Single(ans => ans.Id == x.PlayerAnswerId).IsCorrect
+            }).ToArray();
 
         if (answerCorrectness.All(x => x.IsCorrent) || answerCorrectness.All(x => !x.IsCorrent))
         {
@@ -141,9 +146,15 @@ public sealed class MatchService
         }
         else
         {
-            var attackerPlayer = answerCorrectness.Single(x => x.IsCorrent);
-            var damagedPlayer = answerCorrectness.Single(x => !x.IsCorrent);
-            damagedPlayer.Player.HP-= attackerPlayer.Player.Dmg;
+            var attackerPlayer = answerCorrectness.Single(x => x.IsCorrent).Player;
+            var damagedPlayer = answerCorrectness.Single(x => !x.IsCorrent).Player;
+            damagedPlayer.Hp-= attackerPlayer.Dmg;
         }
+    }
+
+    private static string GetAnswerId(Stage currentStage, Player player)
+    {
+        var playerAnswer = currentStage.Answers.Single(a => a.Player == player);
+        return playerAnswer.AnswerId;
     }
 }

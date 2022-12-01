@@ -12,6 +12,6 @@ public sealed class Player
         Lobby = lobby;
     }
 
-    public int HP { get; set; } = 10;
-    public int Dmg { get; } = 4;
+    public int Hp { get; set; } = 10;
+    public int Dmg => 4;
 }

@@ -4,27 +4,22 @@ namespace IT_Quiz.Models;
 
 public sealed class Match
 {
-    private IReadOnlyList<Lobby> _lobbies;
-
-    public IReadOnlyCollection<Player> Players => _lobbies.Select(x => new Player(x)).ToArray();
+    public IReadOnlyCollection<Player> Players { get; }
 
     public Match(string matchId, IReadOnlyList<Lobby> lobbies, string startQuestionId)
     {
         MatchId = matchId;
 
-        _lobbies = lobbies;
+        State = "InProgress";
 
+        Players = lobbies.Select(x => new Player(x)).ToArray();
+        
         CurrentStage = new Stage(Guid.NewGuid().ToString(), startQuestionId, Players);
 
         _stages.Add(CurrentStage);
-
-        State = "InProgress";
     }
 
     public string MatchId { get; }
-
-    [JsonIgnore]
-    public string CurrentQuestionId => CurrentStage.QuestionId;
 
     [JsonIgnore]
     public Stage CurrentStage { get; private set; }

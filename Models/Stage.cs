@@ -2,6 +2,8 @@ using System.Text.Json.Serialization;
 
 namespace IT_Quiz.Models;
 
+public sealed record PlayerAnswer(Player Player, string AnswerId);
+
 public sealed class Stage
 {
     public string Id { get; }
@@ -10,10 +12,10 @@ public sealed class Stage
     [JsonIgnore]
     public IReadOnlyCollection<Player> Players { get; }
 
-    private IList<(Player, string answerid)> _answers;
+    private IList<PlayerAnswer> _answers;
 
     [JsonIgnore]
-    public IReadOnlyCollection<(Player, string answerid)> Answers => _answers.ToArray();
+    public IReadOnlyCollection<PlayerAnswer> Answers => _answers.ToArray();
 
     public Stage(string Id, string QuestionId, IReadOnlyCollection<Player> players)
     {
@@ -21,28 +23,23 @@ public sealed class Stage
         this.QuestionId = QuestionId;
         Players = players;
 
-        _answers = new List<(Player, string answerid)>();
+        _answers = new List<PlayerAnswer>();
     }
 
     public string State
     {
         get
         {
-            var allPlayerAnswered = Players.Select(x => new { x, AnswerDone = _answers.Any(a => a.Item1 == x) })
+            var allPlayerAnswered = Players
+                .Select(x => new { x, AnswerDone = _answers.Any(a => a.Player == x) })
                 .All(x => x.AnswerDone);
-            if (allPlayerAnswered)
-            {
-                return "Complete";
-            }
-            else
-            {
-                return "WaitForAnswers";
-            }
+            
+            return allPlayerAnswered ? "Complete" : "WaitForAnswers";
         }
     }
 
     public void RegisterAnswer(Player player, string answerId)
     {
-        _answers.Add((player, answerId));
+        _answers.Add(new PlayerAnswer(player, answerId));
     }
 }
